@@ -4,25 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-React Native (Expo) + Express + PostgreSQL monorepo for a mobile app with backend API.
+React Native (Expo) app for Room Rental Management (Quản Lý Nhà Trọ).  
+Architecture: **MVC (Model - View - Controller)**  
+Data storage: **In-memory Array** (no database)
 
 ## Commands
-
-### Database
-```bash
-docker-compose up -d                    # Start PostgreSQL
-cd backend && npm run db:migrate        # Run migrations
-```
-
-### Backend (Express)
-```bash
-cd backend
-npm run dev                             # Dev server with hot reload (tsx watch)
-npm run build                           # Compile TypeScript
-npm run start                           # Run compiled output
-npm test                                # Run Jest tests
-npm run lint                            # ESLint
-```
 
 ### Mobile (Expo)
 ```bash
@@ -34,32 +20,28 @@ npm test                                # Run Jest tests
 npm run lint                            # ESLint
 ```
 
-## Architecture
+## Architecture (MVC)
 
-### Backend (`/backend`)
-MVC pattern with TypeScript ESM modules:
-- **Routes** (`src/routes/`) - HTTP endpoints, mounted at `/api`
-- **Controllers** (`src/controllers/`) - Request handling, validation
-- **Models** (`src/models/`) - Database queries using raw SQL via `pg`
-- **Middleware** (`src/middleware/`) - Error handling, Zod validation
+### Folder Structure
+```
+mobile/src/
+├── models/          # Model - Dữ liệu (RoomModel.ts)
+├── views/           # View - Giao diện
+│   ├── screens/     # Màn hình (RoomListScreen, AddEditRoomScreen)
+│   └── components/  # Components (RoomCard, StatisticsBar)
+├── controllers/     # Controller - Logic nghiệp vụ (RoomController.ts)
+├── utils/           # Tiện ích (Validator.ts)
+├── navigation/      # Điều hướng (RootNavigator.tsx)
+└── types/           # TypeScript types (Room, RoomStatus)
+```
 
-Database helper: `src/config/database.ts` exports `query()` and `getClient()`.
+### MVC Flow
+1. **Model** (`RoomModel.ts`): Quản lý ArrayList phòng, CRUD operations
+2. **View** (`views/`): Hiển thị UI, nhận input từ user
+3. **Controller** (`RoomController.ts`): Nhận yêu cầu từ View → validate → gọi Model → trả kết quả
 
-API response format: `{ success: boolean, data?: T, error?: string }`
-
-### Mobile (`/mobile`)
-Expo SDK 52 with React Navigation v7:
-- **Screens** (`src/screens/`) - Screen components
-- **Navigation** (`src/navigation/`) - Stack navigator (RootNavigator)
-- **Services** (`src/services/api.ts`) - Axios client calling backend `/api/*`
-- **Hooks** (`src/hooks/`) - Data fetching hooks wrapping services
-- **Types** (`src/types/`) - Shared TypeScript interfaces
-
-Navigation params: `RootStackParamList` in `src/types/index.ts`
-
-API base URL: `EXPO_PUBLIC_API_URL` env var (defaults to `http://localhost:3000/api`)
-
-### Shared Patterns
-- Both apps define `User` and `ApiResponse<T>` types independently (backend uses `Date`, mobile uses `string` for `createdAt`)
-- Backend uses `.js` extensions in imports for ESM compatibility
-- Zustand available for state management (mobile) but not currently used
+### Key Patterns
+- Data stored in `ArrayList<Room>` (resets on app restart — per assignment requirement)
+- FlatList used as RecyclerView equivalent
+- Room status color-coded: 🟢 Green = Available, 🔴 Red = Occupied
+- Singleton pattern for Model and Controller instances

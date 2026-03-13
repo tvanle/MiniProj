@@ -16,3 +16,6 @@
 {"ts":"2026-03-10T03:43:54.417Z","hook":"scout-block","tool":"Bash","dur":9,"status":"block","exit":2,"error":""}
 {"ts":"2026-03-10T03:43:58.405Z","hook":"scout-block","tool":"Bash","dur":9,"status":"block","exit":2,"error":""}
 {"ts":"2026-03-10T03:44:01.885Z","hook":"scout-block","tool":"Bash","dur":6,"status":"ok","exit":0,"error":""}
+{"ts":"2026-03-13T03:37:38.723Z","hook":"scout-block","tool":"Glob","dur":5,"status":"block","exit":2,"error":""}
+{"ts":"2026-03-13T03:37:38.723Z","hook":"scout-block","tool":"Read","dur":3,"status":"ok","exit":0,"error":""}
+{"ts":"2026-03-13T03:37:38.727Z","hook":"scout-block","tool":"Read","dur":4,"status":"ok","exit":0,"error":""}

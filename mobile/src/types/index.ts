@@ -1,18 +1,32 @@
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  createdAt: string;
+// ==========================================
+// Types / Interfaces cho ứng dụng Quản Lý Nhà Trọ
+// ==========================================
+
+/**
+ * Enum tình trạng phòng
+ */
+export enum RoomStatus {
+  AVAILABLE = 'AVAILABLE',   // Còn trống
+  OCCUPIED = 'OCCUPIED',     // Đã thuê
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
+/**
+ * Interface phòng trọ
+ */
+export interface Room {
+  roomId: string;           // Mã phòng (VD: "P001")
+  roomName: string;         // Tên phòng (VD: "Phòng 101")
+  price: number;            // Giá thuê (VD: 2500000)
+  status: RoomStatus;       // Tình trạng: Còn trống / Đã thuê
+  tenantName: string;       // Tên người thuê
+  tenantPhone: string;      // SĐT người thuê
 }
 
+/**
+ * Navigation param list
+ */
 export type RootStackParamList = {
-  Home: undefined;
-  UserList: undefined;
-  UserDetail: { userId: number };
+  RoomList: undefined;
+  AddEditRoom: { room?: Room; mode: 'add' | 'edit' };
+  RoomDetail: { roomId: string };
 };

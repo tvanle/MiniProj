@@ -1,20 +1,22 @@
 {
   "expo": {
-    "name": "MiniProj",
-    "slug": "miniproj",
+    "name": "Quản Lý Nhà Trọ",
+    "slug": "room-rental-management",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#6366f1"
+      "backgroundColor": "#4f46e5"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#6366f1"
+        "backgroundColor": "#4f46e5"
       }
     }
   }
