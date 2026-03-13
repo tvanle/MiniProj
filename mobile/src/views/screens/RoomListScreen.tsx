@@ -15,11 +15,13 @@ import {
     StyleSheet,
     SafeAreaView,
     StatusBar,
+    Platform,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Room, RoomStatus, RootStackParamList } from '../../types';
 import { roomController } from '../../controllers/RoomController';
+import { AlertUtils } from '../../utils/AlertUtils';
 import RoomCard from '../components/RoomCard';
 import StatisticsBar from '../components/StatisticsBar';
 
@@ -98,25 +100,21 @@ const RoomListScreen: React.FC = () => {
      * Xử lý xóa phòng - AlertDialog xác nhận
      */
     const handleDelete = (room: Room) => {
-        Alert.alert(
+        AlertUtils.alert(
             '⚠️ Xác nhận xóa',
             `Bạn có chắc muốn xóa "${room.roomName}" không?\n\nThao tác này không thể hoàn tác!`,
-            [
-                { text: 'Hủy', style: 'cancel' },
-                {
-                    text: 'Xóa',
-                    style: 'destructive',
-                    onPress: () => {
-                        const result = roomController.deleteRoom(room.roomId);
-                        if (result.success) {
-                            Alert.alert('✅ Thành công', result.message);
-                            refreshData();
-                        } else {
-                            Alert.alert('❌ Lỗi', result.message);
-                        }
-                    },
-                },
-            ]
+            () => {
+                const result = roomController.deleteRoom(room.roomId);
+                if (result.success) {
+                    AlertUtils.alert('✅ Thành công', result.message || 'Đã xóa phòng thành công!');
+                    refreshData();
+                } else {
+                    AlertUtils.alert('❌ Lỗi', result.message || 'Xóa phòng thất bại!');
+                }
+            },
+            () => { }, // cancel callback
+            'Xóa',
+            'Hủy'
         );
     };
 
@@ -203,6 +201,7 @@ const RoomListScreen: React.FC = () => {
                 keyExtractor={(item) => item.roomId}
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
+                keyboardShouldPersistTaps="handled"
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyIcon}>🏚️</Text>

@@ -23,6 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, RoomStatus } from '../../types';
 import { roomController } from '../../controllers/RoomController';
 import { ValidationError } from '../../utils/Validator';
+import { AlertUtils } from '../../utils/AlertUtils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddEditRoom'>;
 type ScreenRouteProp = RouteProp<RootStackParamList, 'AddEditRoom'>;
@@ -92,15 +93,13 @@ const AddEditRoomScreen: React.FC = () => {
         }
 
         if (result.success) {
-            Alert.alert('✅ Thành công', result.message, [
-                { text: 'OK', onPress: () => navigation.goBack() },
-            ]);
+            AlertUtils.alert('✅ Thành công', result.message || 'Lưu thành công', () => navigation.goBack());
         } else if (result.errors) {
             setErrors(result.errors);
             // Hiển thị lỗi đầu tiên
-            Alert.alert('❌ Lỗi nhập liệu', result.errors[0].message);
+            AlertUtils.alert('❌ Lỗi nhập liệu', result.errors[0].message);
         } else {
-            Alert.alert('❌ Lỗi', result.message || 'Đã xảy ra lỗi!');
+            AlertUtils.alert('❌ Lỗi', result.message || 'Đã xảy ra lỗi!');
         }
     };
 
@@ -128,6 +127,7 @@ const AddEditRoomScreen: React.FC = () => {
                     style={styles.form}
                     contentContainerStyle={styles.formContent}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
                     {/* Mã phòng */}
                     <View style={styles.field}>
