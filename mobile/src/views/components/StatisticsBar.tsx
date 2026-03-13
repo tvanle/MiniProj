@@ -3,7 +3,7 @@
 // Hiển thị thống kê tổng quan phòng trọ
 // ==========================================
 
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { formatCurrency } from '../../utils/Validator';
 
@@ -14,35 +14,37 @@ interface StatisticsBarProps {
     totalRevenue: number;
 }
 
+/**
+ * StatisticsBar - Component hiển thị thống kê phòng trọ
+ * Wrapped với React.memo để tránh re-render không cần thiết
+ */
 const StatisticsBar: React.FC<StatisticsBarProps> = ({
     total,
     available,
     occupied,
     totalRevenue,
-}) => {
-    return (
-        <View style={styles.container}>
-            <View style={styles.row}>
-                <View style={[styles.statItem, styles.totalBg]}>
-                    <Text style={styles.statNumber}>{total}</Text>
-                    <Text style={styles.statLabel}>Tổng phòng</Text>
-                </View>
-                <View style={[styles.statItem, styles.availableBg]}>
-                    <Text style={styles.statNumber}>{available}</Text>
-                    <Text style={styles.statLabel}>Còn trống</Text>
-                </View>
-                <View style={[styles.statItem, styles.occupiedBg]}>
-                    <Text style={styles.statNumber}>{occupied}</Text>
-                    <Text style={styles.statLabel}>Đã thuê</Text>
-                </View>
+}) => (
+    <View style={styles.container}>
+        <View style={styles.row}>
+            <View style={[styles.statItem, styles.totalBg]}>
+                <Text style={styles.statNumber}>{total}</Text>
+                <Text style={styles.statLabel}>Tổng phòng</Text>
             </View>
-            <View style={styles.revenueRow}>
-                <Text style={styles.revenueLabel}>💰 Tổng doanh thu/tháng:</Text>
-                <Text style={styles.revenueValue}>{formatCurrency(totalRevenue)}</Text>
+            <View style={[styles.statItem, styles.availableBg]}>
+                <Text style={styles.statNumber}>{available}</Text>
+                <Text style={styles.statLabel}>Còn trống</Text>
+            </View>
+            <View style={[styles.statItem, styles.occupiedBg]}>
+                <Text style={styles.statNumber}>{occupied}</Text>
+                <Text style={styles.statLabel}>Đã thuê</Text>
             </View>
         </View>
-    );
-};
+        <View style={styles.revenueRow}>
+            <Text style={styles.revenueLabel}>💰 Tổng doanh thu/tháng:</Text>
+            <Text style={styles.revenueValue}>{formatCurrency(totalRevenue)}</Text>
+        </View>
+    </View>
+);
 
 const styles = StyleSheet.create({
     container: {
@@ -108,4 +110,5 @@ const styles = StyleSheet.create({
     },
 });
 
-export default StatisticsBar;
+// Export với React.memo để tối ưu re-render
+export default memo(StatisticsBar);

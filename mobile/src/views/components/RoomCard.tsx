@@ -4,7 +4,7 @@
 // Tương đương item_room.xml trong Android
 // ==========================================
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Room, RoomStatus } from '../../types';
 import { formatCurrency } from '../../utils/Validator';
@@ -20,6 +20,7 @@ interface RoomCardProps {
 /**
  * RoomCard - Component hiển thị thông tin phòng trọ
  * Tô màu theo tình trạng: Xanh = Còn trống, Đỏ = Đã thuê
+ * Wrapped với React.memo để tránh re-render không cần thiết
  */
 const RoomCard: React.FC<RoomCardProps> = ({
     room,
@@ -30,14 +31,20 @@ const RoomCard: React.FC<RoomCardProps> = ({
 }) => {
     const isAvailable = room.status === RoomStatus.AVAILABLE;
 
+    // Memoize handlers để tránh tạo hàm mới mỗi lần render
+    const handlePress = useCallback(() => onPress(room), [onPress, room]);
+    const handleLongPress = useCallback(() => onLongPress(room), [onLongPress, room]);
+    const handleEdit = useCallback(() => onEdit(room), [onEdit, room]);
+    const handleDelete = useCallback(() => onDelete(room), [onDelete, room]);
+
     return (
         <TouchableOpacity
             style={[
                 styles.card,
                 isAvailable ? styles.cardAvailable : styles.cardOccupied,
             ]}
-            onPress={() => onPress(room)}
-            onLongPress={() => onLongPress(room)}
+            onPress={handlePress}
+            onLongPress={handleLongPress}
             activeOpacity={0.7}
         >
             {/* Header: Tên phòng + Badge tình trạng */}
@@ -76,13 +83,13 @@ const RoomCard: React.FC<RoomCardProps> = ({
             <View style={styles.actions}>
                 <TouchableOpacity
                     style={[styles.actionBtn, styles.editBtn]}
-                    onPress={() => onEdit(room)}
+                    onPress={handleEdit}
                 >
                     <Text style={styles.actionBtnText}>✏️ Sửa</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.actionBtn, styles.deleteBtn]}
-                    onPress={() => onDelete(room)}
+                    onPress={handleDelete}
                 >
                     <Text style={styles.actionBtnText}>🗑️ Xóa</Text>
                 </TouchableOpacity>
@@ -198,4 +205,5 @@ const styles = StyleSheet.create({
     },
 });
 
-export default RoomCard;
+// Export với React.memo để tối ưu re-render
+export default memo(RoomCard);

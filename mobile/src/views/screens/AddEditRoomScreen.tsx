@@ -3,20 +3,20 @@
 // Tương đương AddEditRoomActivity trong Android
 // ==========================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
     TextInput,
     TouchableOpacity,
     ScrollView,
-    Alert,
     StyleSheet,
     Switch,
     SafeAreaView,
     KeyboardAvoidingView,
     Platform,
     StatusBar,
+    TextInputProps,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,6 +27,50 @@ import { AlertUtils } from '../../utils/AlertUtils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddEditRoom'>;
 type ScreenRouteProp = RouteProp<RootStackParamList, 'AddEditRoom'>;
+
+/**
+ * Props cho FormField component
+ */
+interface FormFieldProps {
+    label: string;
+    value: string;
+    onChangeText: (text: string) => void;
+    error?: string;
+    placeholder?: string;
+    editable?: boolean;
+    keyboardType?: TextInputProps['keyboardType'];
+    maxLength?: number;
+}
+
+/**
+ * FormField - Component tái sử dụng cho các trường nhập liệu
+ * DRY: Trích xuất pattern lặp lại trong form
+ */
+const FormField: React.FC<FormFieldProps> = ({
+    label,
+    value,
+    onChangeText,
+    error,
+    placeholder,
+    editable = true,
+    keyboardType = 'default',
+    maxLength,
+}) => (
+    <View style={styles.field}>
+        <Text style={styles.label}>{label}</Text>
+        <TextInput
+            style={[styles.input, error && styles.inputError]}
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            placeholderTextColor="#9ca3af"
+            editable={editable}
+            keyboardType={keyboardType}
+            maxLength={maxLength}
+        />
+        {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+);
 
 /**
  * AddEditRoomScreen - Màn hình thêm/sửa phòng
@@ -65,15 +109,70 @@ const AddEditRoomScreen: React.FC = () => {
     /**
      * Lấy error message cho một field
      */
-    const getFieldError = (field: string): string | undefined => {
+    const getFieldError = useCallback((field: string): string | undefined => {
         return errors.find((e) => e.field === field)?.message;
-    };
+    }, [errors]);
+
+    /**
+     * Xóa error của field khi user nhập liệu
+     */
+    const clearFieldError = useCallback((field: string) => {
+        setErrors((prev) => prev.filter((e) => e.field !== field));
+    }, []);
+
+    /**
+     * Handlers cho các trường nhập liệu
+     */
+    const handleRoomIdChange = useCallback((text: string) => {
+        setRoomId(text);
+        clearFieldError('roomId');
+    }, [clearFieldError]);
+
+    const handleRoomNameChange = useCallback((text: string) => {
+        setRoomName(text);
+        clearFieldError('roomName');
+    }, [clearFieldError]);
+
+    const handlePriceChange = useCallback((text: string) => {
+        setPrice(text);
+        clearFieldError('price');
+    }, [clearFieldError]);
+
+    const handleTenantNameChange = useCallback((text: string) => {
+        setTenantName(text);
+        clearFieldError('tenantName');
+    }, [clearFieldError]);
+
+    const handleTenantPhoneChange = useCallback((text: string) => {
+        setTenantPhone(text);
+        clearFieldError('tenantPhone');
+    }, [clearFieldError]);
+
+    /**
+     * Xử lý thay đổi tình trạng phòng
+     */
+    const handleOccupiedChange = useCallback((value: boolean) => {
+        setIsOccupied(value);
+        if (!value) {
+            setTenantName('');
+            setTenantPhone('');
+            setErrors((prev) =>
+                prev.filter((e) => e.field !== 'tenantName' && e.field !== 'tenantPhone')
+            );
+        }
+    }, []);
+
+    /**
+     * Xử lý quay lại
+     */
+    const handleGoBack = useCallback(() => {
+        navigation.goBack();
+    }, [navigation]);
 
     /**
      * Xử lý lưu phòng (Thêm / Cập nhật)
-     * Gửi dữ liệu tới Controller để xử lý
      */
-    const handleSave = () => {
+    const handleSave = useCallback(() => {
         const formData = {
             roomId: roomId.trim(),
             roomName: roomName.trim(),
@@ -83,25 +182,33 @@ const AddEditRoomScreen: React.FC = () => {
             isOccupied,
         };
 
-        let result;
-        if (isEditing && room) {
-            // UPDATE - Cập nhật qua Controller
-            result = roomController.updateRoom(room.roomId, formData);
-        } else {
-            // CREATE - Thêm mới qua Controller
-            result = roomController.addRoom(formData);
-        }
+        const result = isEditing && room
+            ? roomController.updateRoom(room.roomId, formData)
+            : roomController.addRoom(formData);
 
         if (result.success) {
-            AlertUtils.alert('✅ Thành công', result.message || 'Lưu thành công', () => navigation.goBack());
+            AlertUtils.alert('✅ Thành công', result.message || 'Lưu thành công', handleGoBack);
         } else if (result.errors) {
             setErrors(result.errors);
-            // Hiển thị lỗi đầu tiên
             AlertUtils.alert('❌ Lỗi nhập liệu', result.errors[0].message);
         } else {
             AlertUtils.alert('❌ Lỗi', result.message || 'Đã xảy ra lỗi!');
         }
-    };
+    }, [roomId, roomName, price, tenantName, tenantPhone, isOccupied, isEditing, room, handleGoBack]);
+
+    /**
+     * Header title (memoized)
+     */
+    const headerTitle = useMemo(() =>
+        isEditing ? '✏️ Sửa phòng' : '➕ Thêm phòng mới'
+    , [isEditing]);
+
+    /**
+     * Save button text (memoized)
+     */
+    const saveButtonText = useMemo(() =>
+        isEditing ? '💾 Cập nhật' : '➕ Thêm phòng'
+    , [isEditing]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -112,15 +219,10 @@ const AddEditRoomScreen: React.FC = () => {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        style={styles.backBtn}
-                    >
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backBtn}>
                         <Text style={styles.backBtnText}>← Quay lại</Text>
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>
-                        {isEditing ? '✏️ Sửa phòng' : '➕ Thêm phòng mới'}
-                    </Text>
+                    <Text style={styles.headerTitle}>{headerTitle}</Text>
                 </View>
 
                 <ScrollView
@@ -130,60 +232,33 @@ const AddEditRoomScreen: React.FC = () => {
                     keyboardShouldPersistTaps="handled"
                 >
                     {/* Mã phòng */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Mã phòng *</Text>
-                        <TextInput
-                            style={[styles.input, getFieldError('roomId') && styles.inputError]}
-                            value={roomId}
-                            onChangeText={(text) => {
-                                setRoomId(text);
-                                setErrors(errors.filter((e) => e.field !== 'roomId'));
-                            }}
-                            placeholder="VD: P001"
-                            placeholderTextColor="#9ca3af"
-                            editable={!isEditing}
-                        />
-                        {getFieldError('roomId') && (
-                            <Text style={styles.errorText}>{getFieldError('roomId')}</Text>
-                        )}
-                    </View>
+                    <FormField
+                        label="Mã phòng *"
+                        value={roomId}
+                        onChangeText={handleRoomIdChange}
+                        error={getFieldError('roomId')}
+                        placeholder="VD: P001"
+                        editable={!isEditing}
+                    />
 
                     {/* Tên phòng */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Tên phòng *</Text>
-                        <TextInput
-                            style={[styles.input, getFieldError('roomName') && styles.inputError]}
-                            value={roomName}
-                            onChangeText={(text) => {
-                                setRoomName(text);
-                                setErrors(errors.filter((e) => e.field !== 'roomName'));
-                            }}
-                            placeholder="VD: Phòng 101"
-                            placeholderTextColor="#9ca3af"
-                        />
-                        {getFieldError('roomName') && (
-                            <Text style={styles.errorText}>{getFieldError('roomName')}</Text>
-                        )}
-                    </View>
+                    <FormField
+                        label="Tên phòng *"
+                        value={roomName}
+                        onChangeText={handleRoomNameChange}
+                        error={getFieldError('roomName')}
+                        placeholder="VD: Phòng 101"
+                    />
 
                     {/* Giá thuê */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Giá thuê (VNĐ) *</Text>
-                        <TextInput
-                            style={[styles.input, getFieldError('price') && styles.inputError]}
-                            value={price}
-                            onChangeText={(text) => {
-                                setPrice(text);
-                                setErrors(errors.filter((e) => e.field !== 'price'));
-                            }}
-                            placeholder="VD: 2500000"
-                            placeholderTextColor="#9ca3af"
-                            keyboardType="numeric"
-                        />
-                        {getFieldError('price') && (
-                            <Text style={styles.errorText}>{getFieldError('price')}</Text>
-                        )}
-                    </View>
+                    <FormField
+                        label="Giá thuê (VNĐ) *"
+                        value={price}
+                        onChangeText={handlePriceChange}
+                        error={getFieldError('price')}
+                        placeholder="VD: 2500000"
+                        keyboardType="numeric"
+                    />
 
                     {/* Tình trạng phòng */}
                     <View style={styles.field}>
@@ -194,19 +269,7 @@ const AddEditRoomScreen: React.FC = () => {
                             </Text>
                             <Switch
                                 value={isOccupied}
-                                onValueChange={(value) => {
-                                    setIsOccupied(value);
-                                    if (!value) {
-                                        setTenantName('');
-                                        setTenantPhone('');
-                                        setErrors(
-                                            errors.filter(
-                                                (e) =>
-                                                    e.field !== 'tenantName' && e.field !== 'tenantPhone'
-                                            )
-                                        );
-                                    }
-                                }}
+                                onValueChange={handleOccupiedChange}
                                 trackColor={{ false: '#d1d5db', true: '#fca5a5' }}
                                 thumbColor={isOccupied ? '#ef4444' : '#22c55e'}
                             />
@@ -218,53 +281,23 @@ const AddEditRoomScreen: React.FC = () => {
                         <View style={styles.tenantSection}>
                             <Text style={styles.sectionTitle}>👤 Thông tin người thuê</Text>
 
-                            {/* Tên người thuê */}
-                            <View style={styles.field}>
-                                <Text style={styles.label}>Tên người thuê *</Text>
-                                <TextInput
-                                    style={[
-                                        styles.input,
-                                        getFieldError('tenantName') && styles.inputError,
-                                    ]}
-                                    value={tenantName}
-                                    onChangeText={(text) => {
-                                        setTenantName(text);
-                                        setErrors(errors.filter((e) => e.field !== 'tenantName'));
-                                    }}
-                                    placeholder="VD: Nguyễn Văn A"
-                                    placeholderTextColor="#9ca3af"
-                                />
-                                {getFieldError('tenantName') && (
-                                    <Text style={styles.errorText}>
-                                        {getFieldError('tenantName')}
-                                    </Text>
-                                )}
-                            </View>
+                            <FormField
+                                label="Tên người thuê *"
+                                value={tenantName}
+                                onChangeText={handleTenantNameChange}
+                                error={getFieldError('tenantName')}
+                                placeholder="VD: Nguyễn Văn A"
+                            />
 
-                            {/* Số điện thoại */}
-                            <View style={styles.field}>
-                                <Text style={styles.label}>Số điện thoại *</Text>
-                                <TextInput
-                                    style={[
-                                        styles.input,
-                                        getFieldError('tenantPhone') && styles.inputError,
-                                    ]}
-                                    value={tenantPhone}
-                                    onChangeText={(text) => {
-                                        setTenantPhone(text);
-                                        setErrors(errors.filter((e) => e.field !== 'tenantPhone'));
-                                    }}
-                                    placeholder="VD: 0901234567"
-                                    placeholderTextColor="#9ca3af"
-                                    keyboardType="phone-pad"
-                                    maxLength={10}
-                                />
-                                {getFieldError('tenantPhone') && (
-                                    <Text style={styles.errorText}>
-                                        {getFieldError('tenantPhone')}
-                                    </Text>
-                                )}
-                            </View>
+                            <FormField
+                                label="Số điện thoại *"
+                                value={tenantPhone}
+                                onChangeText={handleTenantPhoneChange}
+                                error={getFieldError('tenantPhone')}
+                                placeholder="VD: 0901234567"
+                                keyboardType="phone-pad"
+                                maxLength={10}
+                            />
                         </View>
                     )}
 
@@ -272,7 +305,7 @@ const AddEditRoomScreen: React.FC = () => {
                     <View style={styles.buttonRow}>
                         <TouchableOpacity
                             style={[styles.btn, styles.cancelBtn]}
-                            onPress={() => navigation.goBack()}
+                            onPress={handleGoBack}
                         >
                             <Text style={styles.cancelBtnText}>Hủy</Text>
                         </TouchableOpacity>
@@ -280,9 +313,7 @@ const AddEditRoomScreen: React.FC = () => {
                             style={[styles.btn, styles.saveBtn]}
                             onPress={handleSave}
                         >
-                            <Text style={styles.saveBtnText}>
-                                {isEditing ? '💾 Cập nhật' : '➕ Thêm phòng'}
-                            </Text>
+                            <Text style={styles.saveBtnText}>{saveButtonText}</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>

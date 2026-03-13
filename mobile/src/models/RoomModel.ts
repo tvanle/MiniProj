@@ -1,7 +1,14 @@
+// ==========================================
+// MODEL: Quản lý dữ liệu phòng trọ (ArrayList)
+// Đây là Model trong mô hình MVC
+// Lưu trữ in-memory, reset khi khởi động lại app
+// ==========================================
 
 import { Room, RoomStatus } from '../types';
 
-
+/**
+ * Dữ liệu phòng mẫu ban đầu
+ */
 const initialRooms: Room[] = [
     {
         roomId: 'P001',
@@ -52,6 +59,11 @@ const initialRooms: Room[] = [
         tenantPhone: '0923456789',
     },
 ];
+
+/**
+ * RoomModel - Quản lý dữ liệu phòng trọ
+ * Singleton pattern - dùng chung 1 instance
+ */
 class RoomModel {
     private rooms: Room[];
 
@@ -59,22 +71,30 @@ class RoomModel {
         this.rooms = [...initialRooms];
     }
 
+    /**
+     * READ - Lấy tất cả phòng
+     */
     getAllRooms(): Room[] {
         return [...this.rooms];
     }
 
+    /**
+     * READ - Lấy phòng theo ID
+     */
     getRoomById(roomId: string): Room | undefined {
         return this.rooms.find((room) => room.roomId === roomId);
     }
 
     /**
-     * Thêm phòng mới
+     * CREATE - Thêm phòng mới
      */
     addRoom(room: Room): void {
         this.rooms.push({ ...room });
     }
 
- 
+    /**
+     * UPDATE - Cập nhật thông tin phòng
+     */
     updateRoom(roomId: string, updatedRoom: Partial<Room>): boolean {
         const index = this.rooms.findIndex((room) => room.roomId === roomId);
         if (index === -1) return false;
@@ -83,7 +103,9 @@ class RoomModel {
         return true;
     }
 
- 
+    /**
+     * DELETE - Xóa phòng
+     */
     deleteRoom(roomId: string): boolean {
         const index = this.rooms.findIndex((room) => room.roomId === roomId);
         if (index === -1) return false;
@@ -92,7 +114,9 @@ class RoomModel {
         return true;
     }
 
-  
+    /**
+     * SEARCH - Tìm kiếm phòng theo keyword
+     */
     searchRooms(keyword: string): Room[] {
         const lowerKeyword = keyword.toLowerCase();
         return this.rooms.filter(
@@ -102,25 +126,31 @@ class RoomModel {
         );
     }
 
-  
+    /**
+     * FILTER - Lọc phòng theo tình trạng
+     */
     filterByStatus(status: RoomStatus): Room[] {
         return this.rooms.filter((room) => room.status === status);
     }
 
-
+    /**
+     * STATISTICS - Thống kê phòng trọ
+     * Tối ưu: Dùng reduce để chỉ duyệt mảng 1 lần
+     */
     getStatistics() {
-        const total = this.rooms.length;
-        const available = this.rooms.filter(
-            (r) => r.status === RoomStatus.AVAILABLE
-        ).length;
-        const occupied = this.rooms.filter(
-            (r) => r.status === RoomStatus.OCCUPIED
-        ).length;
-        const totalRevenue = this.rooms
-            .filter((r) => r.status === RoomStatus.OCCUPIED)
-            .reduce((sum, r) => sum + r.price, 0);
-
-        return { total, available, occupied, totalRevenue };
+        return this.rooms.reduce(
+            (acc, room) => {
+                acc.total++;
+                if (room.status === RoomStatus.OCCUPIED) {
+                    acc.occupied++;
+                    acc.totalRevenue += room.price;
+                } else {
+                    acc.available++;
+                }
+                return acc;
+            },
+            { total: 0, available: 0, occupied: 0, totalRevenue: 0 }
+        );
     }
 
     /**

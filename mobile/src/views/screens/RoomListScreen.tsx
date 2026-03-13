@@ -4,18 +4,16 @@
 // Sử dụng FlatList (= RecyclerView)
 // ==========================================
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
     FlatList,
     TouchableOpacity,
     TextInput,
-    Alert,
     StyleSheet,
     SafeAreaView,
     StatusBar,
-    Platform,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -47,22 +45,13 @@ const RoomListScreen: React.FC = () => {
     });
 
     /**
-     * Load lại dữ liệu mỗi khi màn hình được focus
-     * (sau khi thêm/sửa phòng sẽ tự cập nhật)
-     */
-    useFocusEffect(
-        useCallback(() => {
-            refreshData();
-        }, [searchText, filterStatus])
-    );
-
-    /**
      * Refresh dữ liệu từ Controller
+     * Memoized với useCallback để tránh re-render không cần thiết
      */
-    const refreshData = () => {
+    const refreshData = useCallback(() => {
         let data: Room[];
 
-        // Tìm kiếm
+        // Tìm kiếm hoặc lọc theo filter
         if (searchText.trim()) {
             data = roomController.searchRooms(searchText);
         } else if (filterStatus !== 'ALL') {
@@ -73,33 +62,35 @@ const RoomListScreen: React.FC = () => {
 
         setRooms(data);
         setStats(roomController.getStatistics());
-    };
+    }, [searchText, filterStatus]);
 
     /**
-     * Xử lý click vào phòng → mở chi tiết/sửa
+     * Load lại dữ liệu mỗi khi màn hình được focus
      */
-    const handlePress = (room: Room) => {
+    useFocusEffect(
+        useCallback(() => {
+            refreshData();
+        }, [refreshData])
+    );
+
+    /**
+     * Xử lý click vào phòng → mở sửa
+     */
+    const handlePress = useCallback((room: Room) => {
         navigation.navigate('AddEditRoom', { room, mode: 'edit' });
-    };
-
-    /**
-     * Xử lý long press → xóa phòng
-     */
-    const handleLongPress = (room: Room) => {
-        handleDelete(room);
-    };
+    }, [navigation]);
 
     /**
      * Xử lý sửa phòng
      */
-    const handleEdit = (room: Room) => {
+    const handleEdit = useCallback((room: Room) => {
         navigation.navigate('AddEditRoom', { room, mode: 'edit' });
-    };
+    }, [navigation]);
 
     /**
      * Xử lý xóa phòng - AlertDialog xác nhận
      */
-    const handleDelete = (room: Room) => {
+    const handleDelete = useCallback((room: Room) => {
         AlertUtils.alert(
             '⚠️ Xác nhận xóa',
             `Bạn có chắc muốn xóa "${room.roomName}" không?\n\nThao tác này không thể hoàn tác!`,
@@ -112,24 +103,46 @@ const RoomListScreen: React.FC = () => {
                     AlertUtils.alert('❌ Lỗi', result.message || 'Xóa phòng thất bại!');
                 }
             },
-            () => { }, // cancel callback
+            () => { },
             'Xóa',
             'Hủy'
         );
-    };
+    }, [refreshData]);
+
+    /**
+     * Xử lý long press → xóa phòng
+     */
+    const handleLongPress = useCallback((room: Room) => {
+        handleDelete(room);
+    }, [handleDelete]);
 
     /**
      * Xử lý thay đổi filter
      */
-    const handleFilterChange = (status: RoomStatus | 'ALL') => {
+    const handleFilterChange = useCallback((status: RoomStatus | 'ALL') => {
         setFilterStatus(status);
-        setSearchText(''); // Reset search khi đổi filter
-    };
+        setSearchText('');
+    }, []);
+
+    /**
+     * Xử lý thay đổi search text
+     */
+    const handleSearchChange = useCallback((text: string) => {
+        setSearchText(text);
+        setFilterStatus('ALL');
+    }, []);
+
+    /**
+     * Điều hướng thêm phòng mới
+     */
+    const handleAddRoom = useCallback(() => {
+        navigation.navigate('AddEditRoom', { mode: 'add' });
+    }, [navigation]);
 
     /**
      * Render item trong FlatList (= RecyclerView)
      */
-    const renderItem = ({ item }: { item: Room }) => (
+    const renderItem = useCallback(({ item }: { item: Room }) => (
         <RoomCard
             room={item}
             onPress={handlePress}
@@ -137,7 +150,25 @@ const RoomListScreen: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
         />
-    );
+    ), [handlePress, handleLongPress, handleEdit, handleDelete]);
+
+    /**
+     * Key extractor cho FlatList
+     */
+    const keyExtractor = useCallback((item: Room) => item.roomId, []);
+
+    /**
+     * Empty component khi không có phòng
+     */
+    const ListEmptyComponent = useMemo(() => (
+        <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>🏚️</Text>
+            <Text style={styles.emptyText}>Không có phòng nào</Text>
+            <Text style={styles.emptySubtext}>
+                Nhấn nút "+" để thêm phòng mới
+            </Text>
+        </View>
+    ), []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -155,10 +186,7 @@ const RoomListScreen: React.FC = () => {
                     style={styles.searchInput}
                     placeholder="🔍 Tìm kiếm phòng, người thuê..."
                     value={searchText}
-                    onChangeText={(text) => {
-                        setSearchText(text);
-                        setFilterStatus('ALL');
-                    }}
+                    onChangeText={handleSearchChange}
                     placeholderTextColor="#9ca3af"
                 />
             </View>
@@ -198,25 +226,17 @@ const RoomListScreen: React.FC = () => {
             {/* Danh sách phòng - FlatList (= RecyclerView) */}
             <FlatList
                 data={rooms}
-                keyExtractor={(item) => item.roomId}
+                keyExtractor={keyExtractor}
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 keyboardShouldPersistTaps="handled"
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyIcon}>🏚️</Text>
-                        <Text style={styles.emptyText}>Không có phòng nào</Text>
-                        <Text style={styles.emptySubtext}>
-                            Nhấn nút "+" để thêm phòng mới
-                        </Text>
-                    </View>
-                }
+                ListEmptyComponent={ListEmptyComponent}
             />
 
             {/* Nút thêm phòng (FAB) */}
             <TouchableOpacity
                 style={styles.fab}
-                onPress={() => navigation.navigate('AddEditRoom', { mode: 'add' })}
+                onPress={handleAddRoom}
                 activeOpacity={0.8}
             >
                 <Text style={styles.fabText}>＋</Text>

@@ -9,6 +9,18 @@ import { roomModel } from '../models/RoomModel';
 import { validateRoom, ValidationError } from '../utils/Validator';
 
 /**
+ * Dữ liệu form nhập liệu phòng
+ */
+interface RoomFormData {
+    roomId: string;
+    roomName: string;
+    price: string;
+    tenantName: string;
+    tenantPhone: string;
+    isOccupied: boolean;
+}
+
+/**
  * Kết quả trả về từ Controller
  */
 export interface ControllerResult<T = void> {
@@ -16,6 +28,20 @@ export interface ControllerResult<T = void> {
     data?: T;
     errors?: ValidationError[];
     message?: string;
+}
+
+/**
+ * Helper: Tạo đối tượng Room từ form data
+ * DRY - Dùng chung cho addRoom và updateRoom
+ */
+function createRoomFromFormData(data: RoomFormData): Omit<Room, 'roomId'> {
+    return {
+        roomName: data.roomName.trim(),
+        price: parseFloat(data.price),
+        status: data.isOccupied ? RoomStatus.OCCUPIED : RoomStatus.AVAILABLE,
+        tenantName: data.isOccupied ? data.tenantName.trim() : '',
+        tenantPhone: data.isOccupied ? data.tenantPhone.trim() : '',
+    };
 }
 
 /**
@@ -39,14 +65,7 @@ class RoomController {
     /**
      * CREATE - Thêm phòng mới
      */
-    addRoom(data: {
-        roomId: string;
-        roomName: string;
-        price: string;
-        tenantName: string;
-        tenantPhone: string;
-        isOccupied: boolean;
-    }): ControllerResult<Room> {
+    addRoom(data: RoomFormData): ControllerResult<Room> {
         // Validate dữ liệu
         const existingRooms = roomModel.getAllRooms();
         const errors = validateRoom({
@@ -59,14 +78,10 @@ class RoomController {
             return { success: false, errors };
         }
 
-        // Tạo đối tượng Room
+        // Tạo đối tượng Room (DRY - dùng helper)
         const newRoom: Room = {
             roomId: data.roomId.trim(),
-            roomName: data.roomName.trim(),
-            price: parseFloat(data.price),
-            status: data.isOccupied ? RoomStatus.OCCUPIED : RoomStatus.AVAILABLE,
-            tenantName: data.isOccupied ? data.tenantName.trim() : '',
-            tenantPhone: data.isOccupied ? data.tenantPhone.trim() : '',
+            ...createRoomFromFormData(data),
         };
 
         // Thêm vào Model
@@ -82,17 +97,7 @@ class RoomController {
     /**
      * UPDATE - Cập nhật thông tin phòng
      */
-    updateRoom(
-        roomId: string,
-        data: {
-            roomId: string;
-            roomName: string;
-            price: string;
-            tenantName: string;
-            tenantPhone: string;
-            isOccupied: boolean;
-        }
-    ): ControllerResult<Room> {
+    updateRoom(roomId: string, data: RoomFormData): ControllerResult<Room> {
         // Validate dữ liệu
         const errors = validateRoom({
             ...data,
@@ -103,15 +108,8 @@ class RoomController {
             return { success: false, errors };
         }
 
-        // Cập nhật qua Model
-        const updatedData: Partial<Room> = {
-            roomName: data.roomName.trim(),
-            price: parseFloat(data.price),
-            status: data.isOccupied ? RoomStatus.OCCUPIED : RoomStatus.AVAILABLE,
-            tenantName: data.isOccupied ? data.tenantName.trim() : '',
-            tenantPhone: data.isOccupied ? data.tenantPhone.trim() : '',
-        };
-
+        // Cập nhật qua Model (DRY - dùng helper)
+        const updatedData = createRoomFromFormData(data);
         const success = roomModel.updateRoom(roomId, updatedData);
 
         if (!success) {
