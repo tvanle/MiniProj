@@ -17,6 +17,7 @@ npm start                               # Start Expo dev server
 npm run android                         # Android emulator
 npm run ios                             # iOS simulator
 npm test                                # Run Jest tests
+npm test -- --testPathPattern="Foo"     # Run single test file
 npm run lint                            # ESLint
 ```
 
