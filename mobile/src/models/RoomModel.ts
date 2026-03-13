@@ -1,13 +1,7 @@
-// ==========================================
-// MODEL: Quản lý dữ liệu phòng trọ
-// Dữ liệu lưu tạm thời bằng Array (không dùng database)
-// ==========================================
 
 import { Room, RoomStatus } from '../types';
 
-/**
- * Dữ liệu mẫu ban đầu
- */
+
 const initialRooms: Room[] = [
     {
         roomId: 'P001',
@@ -58,29 +52,17 @@ const initialRooms: Room[] = [
         tenantPhone: '0923456789',
     },
 ];
-
-/**
- * RoomModel - Quản lý danh sách phòng trọ (Array)
- * Đây là Model trong mô hình MVC
- */
 class RoomModel {
     private rooms: Room[];
 
     constructor() {
-        // Khởi tạo với dữ liệu mẫu
         this.rooms = [...initialRooms];
     }
 
-    /**
-     * Lấy toàn bộ danh sách phòng
-     */
     getAllRooms(): Room[] {
         return [...this.rooms];
     }
 
-    /**
-     * Tìm phòng theo mã phòng
-     */
     getRoomById(roomId: string): Room | undefined {
         return this.rooms.find((room) => room.roomId === roomId);
     }
@@ -92,9 +74,7 @@ class RoomModel {
         this.rooms.push({ ...room });
     }
 
-    /**
-     * Cập nhật thông tin phòng
-     */
+ 
     updateRoom(roomId: string, updatedRoom: Partial<Room>): boolean {
         const index = this.rooms.findIndex((room) => room.roomId === roomId);
         if (index === -1) return false;
@@ -103,9 +83,7 @@ class RoomModel {
         return true;
     }
 
-    /**
-     * Xóa phòng
-     */
+ 
     deleteRoom(roomId: string): boolean {
         const index = this.rooms.findIndex((room) => room.roomId === roomId);
         if (index === -1) return false;
@@ -114,9 +92,7 @@ class RoomModel {
         return true;
     }
 
-    /**
-     * Tìm kiếm phòng theo tên (nâng cao)
-     */
+  
     searchRooms(keyword: string): Room[] {
         const lowerKeyword = keyword.toLowerCase();
         return this.rooms.filter(
@@ -126,16 +102,12 @@ class RoomModel {
         );
     }
 
-    /**
-     * Lọc phòng theo tình trạng (nâng cao)
-     */
+  
     filterByStatus(status: RoomStatus): Room[] {
         return this.rooms.filter((room) => room.status === status);
     }
 
-    /**
-     * Thống kê (nâng cao)
-     */
+
     getStatistics() {
         const total = this.rooms.length;
         const available = this.rooms.filter(
