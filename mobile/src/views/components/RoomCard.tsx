@@ -104,14 +104,14 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
     },
     cardAvailable: {
-        backgroundColor: '#f0fdf4',
+        backgroundColor: '#E8F8F5',
         borderLeftWidth: 4,
-        borderLeftColor: '#22c55e',
+        borderLeftColor: '#00B894',
     },
     cardOccupied: {
-        backgroundColor: '#fef2f2',
+        backgroundColor: '#FFEEEE',
         borderLeftWidth: 4,
-        borderLeftColor: '#ef4444',
+        borderLeftColor: '#FF7675',
     },
     header: {
         flexDirection: 'row',
@@ -139,10 +139,10 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     badgeAvailable: {
-        backgroundColor: '#dcfce7',
+        backgroundColor: '#C8F7DC',
     },
     badgeOccupied: {
-        backgroundColor: '#fee2e2',
+        backgroundColor: '#FFD6D6',
     },
     statusText: {
         fontSize: 12,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
         marginLeft: 4,
     },
     tenantInfo: {
-        backgroundColor: '#fff5f5',
+        backgroundColor: '#F9FAFB',
         padding: 8,
         borderRadius: 8,
         marginBottom: 8,
@@ -186,10 +186,10 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     editBtn: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#0984E3',
     },
     deleteBtn: {
-        backgroundColor: '#ef4444',
+        backgroundColor: '#FF7675',
     },
     actionBtnText: {
         color: '#fff',

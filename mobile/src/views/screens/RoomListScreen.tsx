@@ -143,7 +143,7 @@ const RoomListScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#4f46e5" />
+            <StatusBar barStyle="light-content" backgroundColor="#6C63FF" />
 
             {/* Header */}
             <View style={styles.header}>
@@ -229,10 +229,10 @@ const RoomListScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#F9FAFB',
     },
     header: {
-        backgroundColor: '#4f46e5',
+        backgroundColor: '#6C63FF',
         paddingHorizontal: 20,
         paddingTop: 16,
         paddingBottom: 16,
@@ -277,8 +277,8 @@ const styles = StyleSheet.create({
         borderColor: '#e5e7eb',
     },
     filterBtnActive: {
-        backgroundColor: '#4f46e5',
-        borderColor: '#4f46e5',
+        backgroundColor: '#6C63FF',
+        borderColor: '#6C63FF',
     },
     filterBtnText: {
         fontSize: 13,
@@ -318,11 +318,11 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#4f46e5',
+        backgroundColor: '#6C63FF',
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 6,
-        shadowColor: '#4f46e5',
+        shadowColor: '#6C63FF',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 6,

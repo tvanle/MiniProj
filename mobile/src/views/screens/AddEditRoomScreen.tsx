@@ -16,6 +16,7 @@ import {
     SafeAreaView,
     KeyboardAvoidingView,
     Platform,
+    StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -105,6 +106,7 @@ const AddEditRoomScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor="#6C63FF" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.flex}
@@ -292,13 +294,13 @@ const AddEditRoomScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#F9FAFB',
     },
     flex: {
         flex: 1,
     },
     header: {
-        backgroundColor: '#4f46e5',
+        backgroundColor: '#6C63FF',
         paddingHorizontal: 20,
         paddingTop: 12,
         paddingBottom: 16,
@@ -342,11 +344,11 @@ const styles = StyleSheet.create({
         color: '#1f2937',
     },
     inputError: {
-        borderColor: '#ef4444',
+        borderColor: '#FF7675',
         borderWidth: 2,
     },
     errorText: {
-        color: '#ef4444',
+        color: '#FF7675',
         fontSize: 12,
         marginTop: 4,
         marginLeft: 4,
@@ -368,12 +370,12 @@ const styles = StyleSheet.create({
         color: '#1f2937',
     },
     tenantSection: {
-        backgroundColor: '#fff7ed',
+        backgroundColor: '#F0F4FF',
         borderRadius: 12,
         padding: 16,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#fed7aa',
+        borderColor: '#D9E2FF',
     },
     sectionTitle: {
         fontSize: 16,
@@ -401,7 +403,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
     saveBtn: {
-        backgroundColor: '#4f46e5',
+        backgroundColor: '#6C63FF',
     },
     saveBtnText: {
         color: '#fff',

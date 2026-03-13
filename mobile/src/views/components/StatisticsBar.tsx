@@ -69,13 +69,13 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
     },
     totalBg: {
-        backgroundColor: '#eff6ff',
+        backgroundColor: '#F0F4FF',
     },
     availableBg: {
-        backgroundColor: '#f0fdf4',
+        backgroundColor: '#E8F8F5',
     },
     occupiedBg: {
-        backgroundColor: '#fef2f2',
+        backgroundColor: '#FFEEEE',
     },
     statNumber: {
         fontSize: 22,
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     revenueValue: {
         fontSize: 15,
         fontWeight: 'bold',
-        color: '#059669',
+        color: '#00B894',
         marginLeft: 6,
     },
 });
