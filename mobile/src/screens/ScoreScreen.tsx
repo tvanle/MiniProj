@@ -15,7 +15,6 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -23,6 +22,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { dbHelper } from '../dal/DBHelper';
 import { storageHelper } from '../dal/StorageHelper';
+import { showAlert } from '../utils/alert';
 import type { ScoreView } from '../models/Score';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -47,7 +47,7 @@ export default function ScoreScreen() {
       setScores(scoreList);
     } catch (error) {
       console.error('Load data error:', error);
-      Alert.alert('Loi', 'Khong the tai du lieu');
+      showAlert('Loi', 'Khong the tai du lieu');
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export default function ScoreScreen() {
 
   // Dang xuat
   const handleLogout = () => {
-    Alert.alert('Xac nhan', 'Ban co muon dang xuat?', [
+    showAlert('Xac nhan', 'Ban co muon dang xuat?', [
       { text: 'Huy', style: 'cancel' },
       {
         text: 'Dang xuat',

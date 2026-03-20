@@ -16,7 +16,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -25,6 +24,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { dbHelper } from '../dal/DBHelper';
 import { storageHelper } from '../dal/StorageHelper';
+import { showAlert } from '../utils/alert';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type LoginNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
@@ -37,7 +37,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Loi', 'Vui long nhap day du thong tin');
+      showAlert('Loi', 'Vui long nhap day du thong tin');
       return;
     }
 
@@ -54,10 +54,10 @@ export default function LoginScreen() {
         // Chuyen sang ScoreScreen
         navigation.replace('Score');
       } else {
-        Alert.alert('Loi', 'Sai ten dang nhap hoac mat khau');
+        showAlert('Loi', 'Sai ten dang nhap hoac mat khau');
       }
     } catch (error) {
-      Alert.alert('Loi', 'Khong the dang nhap');
+      showAlert('Loi', 'Khong the dang nhap');
       console.error(error);
     } finally {
       setLoading(false);
