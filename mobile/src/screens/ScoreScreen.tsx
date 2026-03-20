@@ -1,0 +1,258 @@
+/**
+ * ScoreScreen - Man hinh xem diem
+ * Tuong duong voi ScoreActivity trong Android
+ *
+ * Chuc nang:
+ * - Hien thi danh sach diem (JOIN Students va Scores)
+ * - Hien thi username tu AsyncStorage
+ * - Dang xuat (clear AsyncStorage)
+ */
+
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  RefreshControl,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { dbHelper } from '../dal/DBHelper';
+import { storageHelper } from '../dal/StorageHelper';
+import type { ScoreView } from '../models/Score';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+
+type ScoreNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Score'>;
+
+export default function ScoreScreen() {
+  const navigation = useNavigation<ScoreNavigationProp>();
+  const [scores, setScores] = useState<ScoreView[]>([]);
+  const [username, setUsername] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load du lieu
+  const loadData = useCallback(async () => {
+    try {
+      // Lay username tu AsyncStorage
+      const user = await storageHelper.getUsername();
+      setUsername(user);
+
+      // Lay danh sach diem tu SQLite
+      const scoreList = await dbHelper.getScores();
+      setScores(scoreList);
+    } catch (error) {
+      console.error('Load data error:', error);
+      Alert.alert('Loi', 'Khong the tai du lieu');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Refresh danh sach
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  // Dang xuat
+  const handleLogout = () => {
+    Alert.alert('Xac nhan', 'Ban co muon dang xuat?', [
+      { text: 'Huy', style: 'cancel' },
+      {
+        text: 'Dang xuat',
+        style: 'destructive',
+        onPress: async () => {
+          await storageHelper.clearLoginState();
+          navigation.replace('Login');
+        },
+      },
+    ]);
+  };
+
+  // Render item diem
+  const renderScoreItem = ({ item, index }: { item: ScoreView; index: number }) => (
+    <View style={[styles.scoreItem, index % 2 === 0 && styles.scoreItemEven]}>
+      <View style={styles.scoreInfo}>
+        <Text style={styles.studentName}>{item.name}</Text>
+        <Text style={styles.subject}>{item.subject}</Text>
+      </View>
+      <View style={[styles.scoreBadge, getScoreStyle(item.score)]}>
+        <Text style={styles.scoreText}>{item.score}</Text>
+      </View>
+    </View>
+  );
+
+  // Style theo diem
+  const getScoreStyle = (score: number) => {
+    if (score >= 8) return styles.scoreHigh;
+    if (score >= 5) return styles.scoreMedium;
+    return styles.scoreLow;
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <Text>Dang tai...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>Bang diem</Text>
+          <Text style={styles.headerSubtitle}>Xin chao, {username}</Text>
+        </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Dang xuat</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Danh sach diem */}
+      <FlatList
+        data={scores}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={renderScoreItem}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          <View style={styles.centered}>
+            <Text style={styles.emptyText}>Chua co du lieu diem</Text>
+          </View>
+        }
+        ListHeaderComponent={
+          scores.length > 0 ? (
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableHeaderText}>Sinh vien / Mon hoc</Text>
+              <Text style={styles.tableHeaderText}>Diem</Text>
+            </View>
+          ) : null
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#007AFF',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+  },
+  logoutButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 5,
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: '500',
+  },
+  listContent: {
+    padding: 15,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  tableHeaderText: {
+    fontWeight: '600',
+    color: '#666',
+  },
+  scoreItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  scoreItemEven: {
+    backgroundColor: '#fafafa',
+  },
+  scoreInfo: {
+    flex: 1,
+  },
+  studentName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  subject: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  scoreBadge: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  scoreHigh: {
+    backgroundColor: '#4CAF50',
+  },
+  scoreMedium: {
+    backgroundColor: '#FF9800',
+  },
+  scoreLow: {
+    backgroundColor: '#F44336',
+  },
+  emptyText: {
+    color: '#999',
+    fontSize: 16,
+  },
+});

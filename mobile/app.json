@@ -8,7 +8,9 @@
     "splash": {
       "backgroundColor": "#6366f1"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -16,6 +18,9 @@
       "adaptiveIcon": {
         "backgroundColor": "#6366f1"
       }
-    }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }
