@@ -1,16 +1,19 @@
 /**
  * AppNavigator - Dieu huong ung dung
  * Quan ly navigation giua LoginScreen va ScoreScreen
+ *
+ * Su dung Room Database pattern (Bai 2)
  */
 
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import LoginScreen from '../screens/LoginScreen';
-import ScoreScreen from '../screens/ScoreScreen';
+// Bai 2: Room Database pattern
+import LoginScreenRoom from '../screens/LoginScreenRoom';
+import ScoreScreenRoom from '../screens/ScoreScreenRoom';
+import { AppDB } from '../dal/AppDB';
 import { storageHelper } from '../dal/StorageHelper';
-import { dbHelper } from '../dal/DBHelper';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -26,10 +29,10 @@ export default function AppNavigator() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Khoi tao database
-        await dbHelper.open();
+        // Khoi tao Room Database
+        await AppDB.getInstance();
 
-        // Kiem tra trang thai login tu AsyncStorage
+        // Kiem tra trang thai login tu AsyncStorage (SharedPreferences)
         const loggedIn = await storageHelper.isLoggedIn();
         setIsLoggedIn(loggedIn);
       } catch (error) {
@@ -45,7 +48,7 @@ export default function AppNavigator() {
   if (isLoading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#5856D6" />
       </View>
     );
   }
@@ -55,8 +58,8 @@ export default function AppNavigator() {
       initialRouteName={isLoggedIn ? 'Score' : 'Login'}
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Score" component={ScoreScreen} />
+      <Stack.Screen name="Login" component={LoginScreenRoom} />
+      <Stack.Screen name="Score" component={ScoreScreenRoom} />
     </Stack.Navigator>
   );
 }

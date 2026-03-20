@@ -35,6 +35,8 @@ class DBHelper {
       if (!memoryDB.initialized) {
         this.seedMemoryData();
         memoryDB.initialized = true;
+        // Expose memoryDB to window for debugging in browser console
+        (window as typeof window & { memoryDB: typeof memoryDB }).memoryDB = memoryDB;
       }
       return;
     }
