@@ -36,14 +36,8 @@ export default function ScheduleScreen() {
   const [date, setDate] = useState(new Date(Date.now() + 60000));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  // Fake notification: dùng timer để bắn Alert khi đến giờ
+  // Fake notification: dùng global timer để bắn Alert khi đến giờ (không bị clear khi unmount)
   const [fakeNotification, setFakeNotification] = useState<{ title: string; time: string } | null>(null);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  // Cleanup timers khi unmount
-  useEffect(() => {
-    return () => timersRef.current.forEach(clearTimeout);
-  }, []);
 
   useEffect(() => {
     registerForPushNotifications();
@@ -98,17 +92,15 @@ export default function ScheduleScreen() {
       notificationId = `local-${Date.now()}`;
     }
 
-    // Fake notification: đặt timer để bắn alert khi đến giờ (hoạt động trên web/emulator)
+    // Fake notification: dùng global setTimeout + Alert (hoạt động trên web/emulator, không bị clear khi unmount)
     const delay = date.getTime() - Date.now();
     if (delay > 0) {
       const savedTitle = title;
       const savedTime = formatDateTime(date);
-      const timer = setTimeout(() => {
-        setFakeNotification({ title: savedTitle, time: savedTime });
-        // Tự tắt sau 5 giây
-        setTimeout(() => setFakeNotification(null), 5000);
+      // Dùng global setTimeout - không gắn vào component lifecycle
+      (globalThis as any).__scheduleTimer = setTimeout(() => {
+        Alert.alert('Nhắc nhở', `${savedTitle}\n\nThời gian: ${savedTime}`);
       }, delay);
-      timersRef.current.push(timer);
     }
 
     const savedDate = new Date(date);
