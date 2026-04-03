@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 Notifications.setNotificationHandler({
@@ -34,25 +33,31 @@ export default function ScheduleScreen() {
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(new Date(Date.now() + 60000));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  // Fake notification: dùng timer để bắn Alert khi đến giờ
+  const [fakeNotification, setFakeNotification] = useState<{ title: string; time: string } | null>(null);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Cleanup timers khi unmount
+  useEffect(() => {
+    return () => timersRef.current.forEach(clearTimeout);
+  }, []);
 
   useEffect(() => {
     registerForPushNotifications();
   }, []);
 
   async function registerForPushNotifications() {
-    if (Device.isDevice) {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      if (finalStatus !== 'granted') {
-        Alert.alert('Lỗi', 'Không thể lấy quyền thông báo!');
-      }
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      Alert.alert('Lỗi', 'Không thể lấy quyền thông báo!');
     }
 
     if (Platform.OS === 'android') {
@@ -75,35 +80,56 @@ export default function ScheduleScreen() {
       return;
     }
 
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '⏰ Nhắc nhở',
-        body: title,
-        sound: 'default',
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: date,
-        channelId: 'schedule',
-      },
-    });
+    let notificationId = '';
+    try {
+      notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Nhắc nhở',
+          body: title,
+          sound: 'default',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: date,
+          channelId: 'schedule',
+        },
+      });
+    } catch {
+      notificationId = `local-${Date.now()}`;
+    }
 
+    // Fake notification: đặt timer để bắn alert khi đến giờ (hoạt động trên web/emulator)
+    const delay = date.getTime() - Date.now();
+    if (delay > 0) {
+      const savedTitle = title;
+      const savedTime = formatDateTime(date);
+      const timer = setTimeout(() => {
+        setFakeNotification({ title: savedTitle, time: savedTime });
+        // Tự tắt sau 5 giây
+        setTimeout(() => setFakeNotification(null), 5000);
+      }, delay);
+      timersRef.current.push(timer);
+    }
+
+    const savedDate = new Date(date);
     const newSchedule: ScheduleItem = {
       id: Date.now().toString(),
       title,
-      date,
+      date: savedDate,
       notificationId,
     };
 
     setSchedules((prev) => [...prev, newSchedule]);
+    Alert.alert('Thành công', `Đã đặt lịch nhắc nhở lúc ${formatDateTime(savedDate)}`);
     setTitle('');
-    setDate(new Date());
+    setDate(new Date(Date.now() + 60000));
     setModalVisible(false);
-    Alert.alert('Thành công', `Đã đặt lịch nhắc nhở lúc ${formatDateTime(date)}`);
   }
 
   async function deleteSchedule(item: ScheduleItem) {
-    await Notifications.cancelScheduledNotificationAsync(item.notificationId);
+    if (!item.notificationId.startsWith('local-')) {
+      await Notifications.cancelScheduledNotificationAsync(item.notificationId);
+    }
     setSchedules((prev) => prev.filter((s) => s.id !== item.id));
   }
 
@@ -112,7 +138,7 @@ export default function ScheduleScreen() {
   }
 
   const onDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
-    setShowDatePicker(false);
+    if (Platform.OS === 'android') setShowDatePicker(false);
     if (selectedDate) {
       const newDate = new Date(date);
       newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
@@ -121,13 +147,15 @@ export default function ScheduleScreen() {
   };
 
   const onTimeChange = (_event: DateTimePickerEvent, selectedTime?: Date) => {
-    setShowTimePicker(false);
+    if (Platform.OS === 'android') setShowTimePicker(false);
     if (selectedTime) {
       const newDate = new Date(date);
       newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
       setDate(newDate);
     }
   };
+
+  const pickerDisplay = Platform.OS === 'ios' ? 'spinner' : 'default';
 
   return (
     <View style={styles.container}>
@@ -167,7 +195,10 @@ export default function ScheduleScreen() {
       {/* FloatingActionButton */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => setModalVisible(true)}
+        onPress={() => {
+          setDate(new Date(Date.now() + 60000));
+          setModalVisible(true);
+        }}
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={28} color="#fff" />
@@ -188,44 +219,75 @@ export default function ScheduleScreen() {
             />
 
             <Text style={styles.label}>Ngày</Text>
-            <TouchableOpacity
-              style={styles.dateBtn}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Ionicons name="calendar-outline" size={20} color="#3498db" />
-              <Text style={styles.dateBtnText}>
-                {`${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`}
-              </Text>
-            </TouchableOpacity>
-
-            <Text style={styles.label}>Giờ</Text>
-            <TouchableOpacity
-              style={styles.dateBtn}
-              onPress={() => setShowTimePicker(true)}
-            >
-              <Ionicons name="time-outline" size={20} color="#3498db" />
-              <Text style={styles.dateBtnText}>
-                {`${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`}
-              </Text>
-            </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
-                minimumDate={new Date()}
+            {Platform.OS === 'web' ? (
+              <TextInput
+                style={styles.input}
+                placeholder="DD/MM/YYYY"
+                value={`${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`}
+                onChangeText={(text) => {
+                  // Parse DD/MM/YYYY
+                  const parts = text.split('/');
+                  if (parts.length === 3) {
+                    const d = parseInt(parts[0]), m = parseInt(parts[1]) - 1, y = parseInt(parts[2]);
+                    if (!isNaN(d) && !isNaN(m) && !isNaN(y) && y > 2000) {
+                      const newDate = new Date(date);
+                      newDate.setFullYear(y, m, d);
+                      setDate(newDate);
+                    }
+                  }
+                }}
               />
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.dateBtn}
+                  onPress={() => { setShowTimePicker(false); setShowDatePicker(true); }}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#3498db" />
+                  <Text style={styles.dateBtnText}>
+                    {`${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`}
+                  </Text>
+                </TouchableOpacity>
+                {showDatePicker && Platform.OS === 'ios' && (
+                  <DateTimePicker value={date} mode="date" display={pickerDisplay} onChange={onDateChange} minimumDate={new Date()} />
+                )}
+              </>
             )}
 
-            {showTimePicker && (
-              <DateTimePicker
-                value={date}
-                mode="time"
-                display="default"
-                onChange={onTimeChange}
+            <Text style={styles.label}>Giờ</Text>
+            {Platform.OS === 'web' ? (
+              <TextInput
+                style={styles.input}
+                placeholder="HH:MM"
+                value={`${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`}
+                onChangeText={(text) => {
+                  // Parse HH:MM
+                  const parts = text.split(':');
+                  if (parts.length === 2) {
+                    const h = parseInt(parts[0]), m = parseInt(parts[1]);
+                    if (!isNaN(h) && !isNaN(m) && h >= 0 && h < 24 && m >= 0 && m < 60) {
+                      const newDate = new Date(date);
+                      newDate.setHours(h, m);
+                      setDate(newDate);
+                    }
+                  }
+                }}
               />
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.dateBtn}
+                  onPress={() => { setShowDatePicker(false); setShowTimePicker(true); }}
+                >
+                  <Ionicons name="time-outline" size={20} color="#3498db" />
+                  <Text style={styles.dateBtnText}>
+                    {`${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`}
+                  </Text>
+                </TouchableOpacity>
+                {showTimePicker && Platform.OS === 'ios' && (
+                  <DateTimePicker value={date} mode="time" display={pickerDisplay} onChange={onTimeChange} />
+                )}
+              </>
             )}
 
             <View style={styles.modalActions}>
@@ -234,6 +296,8 @@ export default function ScheduleScreen() {
                 onPress={() => {
                   setModalVisible(false);
                   setTitle('');
+                  setShowDatePicker(false);
+                  setShowTimePicker(false);
                 }}
               >
                 <Text style={styles.cancelBtnText}>Hủy</Text>
@@ -248,6 +312,42 @@ export default function ScheduleScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Android: DateTimePicker nằm ngoài Modal để tránh conflict */}
+      {showDatePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+          minimumDate={new Date()}
+        />
+      )}
+      {showTimePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={date}
+          mode="time"
+          display="default"
+          onChange={onTimeChange}
+        />
+      )}
+
+      {/* Fake Notification Banner - hiện khi đến giờ */}
+      {fakeNotification && (
+        <TouchableOpacity
+          style={styles.notiBanner}
+          onPress={() => setFakeNotification(null)}
+          activeOpacity={0.9}
+        >
+          <Ionicons name="notifications" size={24} color="#fff" style={{ marginRight: 12 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.notiTitle}>Nhắc nhở</Text>
+            <Text style={styles.notiBody}>{fakeNotification.title}</Text>
+            <Text style={styles.notiTime}>{fakeNotification.time}</Text>
+          </View>
+          <Ionicons name="close" size={20} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -341,4 +441,25 @@ const styles = StyleSheet.create({
   cancelBtnText: { color: '#666', fontSize: 15, fontWeight: '600' },
   saveBtn: { backgroundColor: '#3498db' },
   saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  // Fake notification banner
+  notiBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#2c3e50',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    zIndex: 999,
+  },
+  notiTitle: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  notiBody: { color: '#eee', fontSize: 14, marginTop: 2 },
+  notiTime: { color: '#aaa', fontSize: 11, marginTop: 2 },
 });
