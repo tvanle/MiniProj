@@ -22,7 +22,11 @@ export default StyleSheet.create({
   inputGroup: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#0F172A',
     borderRadius: 12, paddingHorizontal: 12, marginBottom: 12,
-    borderWidth: 1, borderColor: '#334155',
+    borderWidth: 1.5, borderColor: '#334155',
+  },
+  errorText: {
+    color: '#EF4444', fontSize: 13, fontWeight: '600',
+    textAlign: 'center', marginBottom: 8,
   },
   inputIcon: { marginRight: 8 },
   input: { flex: 1, height: 48, color: '#F1F5F9', fontSize: 15 },

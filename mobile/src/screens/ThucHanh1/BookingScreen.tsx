@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  ScrollView, Alert, Animated, KeyboardAvoidingView, Platform,
+  View, Text, TextInput, TouchableOpacity, Pressable,
+  ScrollView, Animated, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,16 +32,37 @@ export default function BookingScreen() {
   const [rating, setRating]     = useState(0);
   const [booked, setBooked]     = useState(false);
   const [total, setTotal]       = useState(0);
+  const [error, setError]       = useState('');
+
+  // Entrance animations
+  const headerFade  = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-30)).current;
+  const cardFade    = useRef(new Animated.Value(0)).current;
+  const cardSlide   = useRef(new Animated.Value(50)).current;
 
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const btnScale  = useRef(new Animated.Value(1)).current;
 
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(headerSlide, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(cardFade, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(cardSlide, { toValue: 0, duration: 400, useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, []);
+
   const handleBook = () => {
-    if (!name.trim())               return Alert.alert('Lỗi', 'Vui lòng nhập họ và tên.');
-    if (!phone.trim())              return Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại.');
+    if (!name.trim())     { setError('Vui lòng nhập họ và tên.'); return; }
+    if (!phone.trim())    { setError('Vui lòng nhập số điện thoại.'); return; }
     const qty = parseInt(quantity, 10);
-    if (!qty || qty <= 0)           return Alert.alert('Lỗi', 'Số lượng vé phải lớn hơn 0.');
+    if (!qty || qty <= 0) { setError('Số lượng vé phải lớn hơn 0.'); return; }
+    setError('');
 
     const disc = Math.min(100, Math.max(0, parseFloat(discount) || 0));
     setTotal(computeTotal(ticket.price, qty, disc, 0));
@@ -65,33 +86,36 @@ export default function BookingScreen() {
   const pressIn  = () => Animated.timing(btnScale, { toValue: 0.96, duration: 80, useNativeDriver: true }).start();
   const pressOut = () => Animated.timing(btnScale, { toValue: 1,    duration: 80, useNativeDriver: true }).start();
 
+  // Remove browser default outline on web
+  const inputStyle = [styles.input, Platform.OS === 'web' && { outlineStyle: 'none' }] as any;
+
   return (
     <LinearGradient colors={['#0F172A', '#1E3A5F', '#0F172A']} style={styles.bg}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
           {/* Header */}
-          <View style={styles.header}>
+          <Animated.View style={[styles.header, { opacity: headerFade, transform: [{ translateY: headerSlide }] }]}>
             <LinearGradient colors={['#3B82F6', '#1D4ED8']} style={styles.headerIcon}>
               <Ionicons name="airplane" size={28} color="#fff" />
             </LinearGradient>
             <Text style={styles.headerTitle}>Đặt Vé Máy Bay</Text>
             <Text style={styles.headerSub}>Book your flight ticket</Text>
-          </View>
+          </Animated.View>
 
           {/* Form Card */}
-          <View style={styles.card}>
+          <Animated.View style={[styles.card, { opacity: cardFade, transform: [{ translateY: cardSlide }] }]}>
             <Text style={styles.sectionTitle}>Thông tin hành khách</Text>
 
             <View style={styles.inputGroup}>
               <Ionicons name="person-outline" size={18} color="#64748B" style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="Họ và tên" placeholderTextColor="#94A3B8"
+              <TextInput style={inputStyle} placeholder="Họ và tên" placeholderTextColor="#94A3B8"
                 value={name} onChangeText={setName} />
             </View>
 
             <View style={styles.inputGroup}>
               <Ionicons name="call-outline" size={18} color="#64748B" style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="Số điện thoại" placeholderTextColor="#94A3B8"
+              <TextInput style={inputStyle} placeholder="Số điện thoại" placeholderTextColor="#94A3B8"
                 keyboardType="numeric" value={phone} onChangeText={(v) => setPhone(v.replace(/[^0-9]/g, ''))} />
             </View>
 
@@ -115,25 +139,27 @@ export default function BookingScreen() {
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
                 <Ionicons name="ticket-outline" size={18} color="#64748B" style={styles.inputIcon} />
-                <TextInput style={styles.input} placeholder="Số lượng vé" placeholderTextColor="#94A3B8"
+                <TextInput style={inputStyle} placeholder="Số lượng vé" placeholderTextColor="#94A3B8"
                   keyboardType="numeric" value={quantity} onChangeText={(v) => setQuantity(v.replace(/[^0-9]/g, ''))} />
               </View>
               <View style={[styles.inputGroup, { flex: 1 }]}>
                 <Ionicons name="pricetag-outline" size={18} color="#64748B" style={styles.inputIcon} />
-                <TextInput style={styles.input} placeholder="Ưu đãi %" placeholderTextColor="#94A3B8"
+                <TextInput style={inputStyle} placeholder="Ưu đãi %" placeholderTextColor="#94A3B8"
                   keyboardType="numeric" value={discount} onChangeText={(v) => setDiscount(v.replace(/[^0-9.]/g, ''))} />
               </View>
             </View>
 
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
             <Animated.View style={{ transform: [{ scale: btnScale }] }}>
-              <TouchableOpacity onPressIn={pressIn} onPressOut={pressOut} onPress={handleBook} activeOpacity={1}>
+              <Pressable onPressIn={pressIn} onPressOut={pressOut} onPress={handleBook}>
                 <LinearGradient colors={['#3B82F6', '#1D4ED8']} style={styles.bookBtn}>
                   <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
                   <Text style={styles.bookBtnText}>Đặt Vé</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
-          </View>
+          </Animated.View>
 
           {/* Result Card */}
           {booked && (
