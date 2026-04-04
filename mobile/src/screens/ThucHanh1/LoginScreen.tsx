@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { styles } from './login-styles';
@@ -19,8 +18,6 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [usernameFocused, setUsernameFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
 
   // Entrance animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -50,7 +47,7 @@ export default function LoginScreen() {
   });
 
   return (
-    <LinearGradient colors={['#e8f4fd', '#f0e8ff', '#fef9e7']} style={styles.gradient}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -64,116 +61,94 @@ export default function LoginScreen() {
             <Text style={styles.subtitle}>Welcome back!</Text>
           </Animated.View>
 
-          {/* Card */}
-          <Animated.View
-            style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-          >
-            {/* Username Input */}
-            <Animated.View style={makeStaggerStyle(stagger1)}>
-              <View style={[styles.inputWrapper, usernameFocused && styles.inputWrapperFocused]}>
+          {/* Username Input */}
+          <Animated.View style={makeStaggerStyle(stagger1)}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="person-outline" size={18} color="#aaa" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Your Username / Email"
+                placeholderTextColor="#bbb"
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            </View>
+          </Animated.View>
+
+          {/* Password Input */}
+          <Animated.View style={[makeStaggerStyle(stagger2), styles.mt14]}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed-outline" size={18} color="#aaa" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Your Password"
+                placeholderTextColor="#bbb"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                 <Ionicons
-                  name="person-outline"
+                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={18}
-                  color={usernameFocused ? '#4A90E2' : '#aaa'}
-                  style={styles.inputIcon}
+                  color="#aaa"
                 />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter Your Username / Email"
-                  placeholderTextColor="#bbb"
-                  value={username}
-                  onChangeText={setUsername}
-                  onFocus={() => setUsernameFocused(true)}
-                  onBlur={() => setUsernameFocused(false)}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                />
-              </View>
-            </Animated.View>
-
-            {/* Password Input */}
-            <Animated.View style={[makeStaggerStyle(stagger2), styles.mt16]}>
-              <View style={[styles.inputWrapper, passwordFocused && styles.inputWrapperFocused]}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={18}
-                  color={passwordFocused ? '#4A90E2' : '#aaa'}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={[styles.input, styles.flex]}
-                  placeholder="Enter Your Password"
-                  placeholderTextColor="#bbb"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={18}
-                    color="#aaa"
-                  />
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-
-            {/* Forgot Password */}
-            <Animated.View style={[makeStaggerStyle(stagger2), styles.forgotRow]}>
-              <TouchableOpacity>
-                <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
+          </Animated.View>
 
-            {/* Login Button */}
-            <Animated.View style={makeStaggerStyle(stagger3)}>
-              <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('Booking')}>
-                <LinearGradient
-                  colors={['#4A90E2', '#357ABD']}
-                  style={styles.loginBtn}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Text style={styles.loginBtnText}>Login</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
+          {/* Forgot Password */}
+          <Animated.View style={[makeStaggerStyle(stagger2), styles.forgotRow]}>
+            <TouchableOpacity>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
-            {/* Signup link */}
-            <Animated.View style={[makeStaggerStyle(stagger3), styles.signupRow]}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
-              <TouchableOpacity>
-                <Text style={styles.signupLink}>Signup</Text>
-              </TouchableOpacity>
-            </Animated.View>
+          {/* Login Button */}
+          <Animated.View style={makeStaggerStyle(stagger3)}>
+            <TouchableOpacity
+              style={styles.loginBtn}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('Booking')}
+            >
+              <Text style={styles.loginBtnText}>Login</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
-            {/* Divider */}
-            <Animated.View style={[makeStaggerStyle(stagger4), styles.dividerRow]}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Or</Text>
-              <View style={styles.dividerLine} />
-            </Animated.View>
+          {/* Signup link */}
+          <Animated.View style={[makeStaggerStyle(stagger3), styles.signupRow]}>
+            <Text style={styles.signupText}>Don't have an account? </Text>
+            <TouchableOpacity>
+              <Text style={styles.signupLink}>Signup</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
-            {/* Facebook Button */}
-            <Animated.View style={makeStaggerStyle(stagger4)}>
-              <TouchableOpacity style={styles.facebookBtn} activeOpacity={0.85}>
-                <FontAwesome name="facebook" size={20} color="#fff" style={styles.socialIcon} />
-                <Text style={styles.facebookBtnText}>Login with Facebook</Text>
-              </TouchableOpacity>
-            </Animated.View>
+          {/* Divider */}
+          <Animated.View style={[makeStaggerStyle(stagger4), styles.dividerRow]}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>Or</Text>
+            <View style={styles.dividerLine} />
+          </Animated.View>
 
-            {/* Google Button */}
-            <Animated.View style={[makeStaggerStyle(stagger4), styles.mt12]}>
-              <TouchableOpacity style={styles.googleBtn} activeOpacity={0.85}>
-                <FontAwesome name="google" size={20} color="#DB4437" style={styles.socialIcon} />
-                <Text style={styles.googleBtnText}>Login with Google</Text>
-              </TouchableOpacity>
-            </Animated.View>
+          {/* Facebook Button */}
+          <Animated.View style={makeStaggerStyle(stagger4)}>
+            <TouchableOpacity style={styles.facebookBtn} activeOpacity={0.85}>
+              <FontAwesome name="facebook" size={20} color="#fff" style={styles.socialIcon} />
+              <Text style={styles.facebookBtnText}>Login with Facebook</Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Google Button */}
+          <Animated.View style={[makeStaggerStyle(stagger4), styles.mt12]}>
+            <TouchableOpacity style={styles.googleBtn} activeOpacity={0.85}>
+              <FontAwesome name="google" size={20} color="#DB4437" style={styles.socialIcon} />
+              <Text style={styles.googleBtnText}>Login with Google</Text>
+            </TouchableOpacity>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
