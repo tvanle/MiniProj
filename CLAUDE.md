@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-React Native (Expo) app for Room Rental Management (Quản Lý Nhà Trọ).  
-Architecture: **MVC (Model - View - Controller)**  
-Data storage: **In-memory Array** (no database)
+React Native (Expo) app for **Movie Ticket Booking** (Đặt Vé Xem Phim).  
+Backend: **Firebase** (Authentication, Cloud Firestore, Push Notifications)  
+Architecture: **Service-based** (Services handle Firebase interactions, Screens handle UI)
 
 ## Commands
 
@@ -19,30 +19,42 @@ npm run ios                             # iOS simulator
 npm test                                # Run Jest tests
 npm test -- --testPathPattern="Foo"     # Run single test file
 npm run lint                            # ESLint
+npx tsc --noEmit                        # TypeScript check
 ```
 
-## Architecture (MVC)
+## Architecture
 
 ### Folder Structure
 ```
 mobile/src/
-├── models/          # Model - Dữ liệu (RoomModel.ts)
-├── views/           # View - Giao diện
-│   ├── screens/     # Màn hình (RoomListScreen, AddEditRoomScreen)
-│   └── components/  # Components (RoomCard, StatisticsBar)
-├── controllers/     # Controller - Logic nghiệp vụ (RoomController.ts)
-├── utils/           # Tiện ích (Validator.ts)
-├── navigation/      # Điều hướng (RootNavigator.tsx)
-└── types/           # TypeScript types (Room, RoomStatus)
+├── config/          # Firebase configuration
+├── models/          # TypeScript types (Movie, Theater, Showtime, Ticket)
+├── services/        # Firebase service layer
+│   ├── auth-service.ts          # Login, Register, Logout
+│   ├── movie-service.ts         # Movies, Theaters, Showtimes CRUD + seeding
+│   ├── ticket-service.ts        # Ticket booking & retrieval
+│   └── notification-service.ts  # Push notification scheduling
+├── screens/         # UI Screens
+│   ├── auth/        # Login, Register
+│   ├── movies/      # Movie list, Movie detail
+│   ├── booking/     # Book ticket
+│   ├── tickets/     # My tickets
+│   └── profile/     # User profile
+├── components/      # Reusable components (MovieCard)
+└── navigation/      # RootNavigator with auth-gated navigation
 ```
 
-### MVC Flow
-1. **Model** (`RoomModel.ts`): Quản lý ArrayList phòng, CRUD operations
-2. **View** (`views/`): Hiển thị UI, nhận input từ user
-3. **Controller** (`RoomController.ts`): Nhận yêu cầu từ View → validate → gọi Model → trả kết quả
+### Firebase Collections
+- **users**: User profiles (uid, email, displayName)
+- **movies**: Movie catalog (title, genre, duration, rating, poster)
+- **theaters**: Theater info (name, location, totalSeats)
+- **showtimes**: Show schedules (movieId, theaterId, dateTime, price, availableSeats)
+- **tickets**: Booked tickets (userId, movieId, showtimeId, seatCount, totalPrice)
 
-### Key Patterns
-- Data stored in `ArrayList<Room>` (resets on app restart — per assignment requirement)
-- FlatList used as RecyclerView equivalent
-- Room status color-coded: 🟢 Green = Available, 🔴 Red = Occupied
-- Singleton pattern for Model and Controller instances
+### Key Features
+- Firebase Email/Password authentication with auth state listener
+- Auto-seeding of movies, theaters, and showtimes on first load
+- Ticket booking with seat selection and price calculation
+- Push notification reminders 30 minutes before showtime
+- Bottom tab navigation: Movies | My Tickets | Profile
+- Dark theme UI (colors: #1a1a2e, #16213e, #0f3460, #e94560)

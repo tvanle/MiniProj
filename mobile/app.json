@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Quản Lý Nhà Trọ",
-    "slug": "room-rental-management",
+    "name": "Movie Ticket App",
+    "slug": "movie-ticket-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#4f46e5"
+      "backgroundColor": "#1a1a2e"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#4f46e5"
+        "backgroundColor": "#1a1a2e"
       }
     },
     "plugins": [
