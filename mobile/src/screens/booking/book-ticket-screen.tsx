@@ -16,6 +16,7 @@ import { scheduleShowtimeReminder } from '../../services/notification-service';
 import { auth } from '../../config/firebase-config';
 import { formatDateTime, formatPrice } from '../../utils/formatters';
 import { showAlert, showConfirm } from '../../utils/platform-alert';
+import CountdownToast from '../../components/countdown-toast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookTicket'>;
 
@@ -23,6 +24,7 @@ export default function BookTicketScreen({ route, navigation }: Props) {
   const { movie, showtime, theater } = route.params;
   const [seatCount, setSeatCount] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const totalPrice = seatCount * showtime.price;
 
@@ -45,8 +47,8 @@ export default function BookTicketScreen({ route, navigation }: Props) {
         movie.title, theater.name, showtime.dateTime, ticketId
       );
 
-      showAlert('Thành công!', 'Đặt vé thành công!');
-      navigation.popToTop();
+      // Show countdown toast - stays until user navigates away
+      setShowToast(true);
     } catch (error: any) {
       showAlert('Lỗi', error.message || 'Đặt vé thất bại, vui lòng thử lại');
     } finally {
@@ -65,6 +67,13 @@ export default function BookTicketScreen({ route, navigation }: Props) {
   };
 
   return (
+    <View style={{ flex: 1 }}>
+    <CountdownToast
+      movieTitle={movie.title}
+      showDateTime={showtime.dateTime}
+      visible={showToast}
+      onCountdownEnd={() => setShowToast(false)}
+    />
     <ScrollView style={styles.container}>
       {/* Movie Info */}
       <View style={styles.section}>
@@ -124,6 +133,7 @@ export default function BookTicketScreen({ route, navigation }: Props) {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+    </View>
   );
 }
 

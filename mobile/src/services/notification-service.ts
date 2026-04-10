@@ -60,11 +60,7 @@ export const scheduleShowtimeReminder = async (
   const timeStr = showDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
   if (Platform.OS === 'web') {
-    // Web fallback: show alert immediately
-    Alert.alert(
-      '🎬 Nhắc nhở đã đặt!',
-      `${movieTitle} tại ${theaterName} lúc ${timeStr}. Bạn sẽ không nhận push notification trên web.`
-    );
+    // Web: countdown toast handles the UI, no alert needed
     return null;
   }
 
