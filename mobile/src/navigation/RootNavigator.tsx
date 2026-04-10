@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { User as FirebaseUser } from 'firebase/auth';
 import { RootStackParamList, MainTabParamList } from '../models/types';
-import { subscribeAuthState } from '../services/auth-service';
+import { subscribeAuthState, checkGoogleRedirect } from '../services/auth-service';
 import { registerForPushNotifications } from '../services/notification-service';
 
 // Screens
@@ -73,6 +73,7 @@ export function RootNavigator() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    checkGoogleRedirect(); // Handle Google redirect on web
     const unsubscribe = subscribeAuthState((u) => {
       setUser(u);
       setLoading(false);
