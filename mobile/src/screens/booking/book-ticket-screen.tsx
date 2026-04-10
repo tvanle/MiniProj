@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../models/types';
@@ -14,6 +15,7 @@ import { bookTicket } from '../../services/ticket-service';
 import { scheduleShowtimeReminder } from '../../services/notification-service';
 import { auth } from '../../config/firebase-config';
 import { formatDateTime, formatPrice } from '../../utils/formatters';
+import { showAlert, showConfirm } from '../../utils/platform-alert';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookTicket'>;
 
@@ -24,56 +26,42 @@ export default function BookTicketScreen({ route, navigation }: Props) {
 
   const totalPrice = seatCount * showtime.price;
 
-  const handleBook = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      Alert.alert('Lỗi', 'Vui lòng đăng nhập');
+  const doBook = async () => {
+    try {
+      setLoading(true);
+      const ticketId = await bookTicket({
+        userId: auth.currentUser!.uid,
+        movieId: movie.id,
+        showtimeId: showtime.id,
+        theaterId: theater.id,
+        movieTitle: movie.title,
+        theaterName: theater.name,
+        showDateTime: showtime.dateTime,
+        seatCount,
+        totalPrice,
+      });
+
+      await scheduleShowtimeReminder(
+        movie.title, theater.name, showtime.dateTime, ticketId
+      );
+
+      showAlert('Thành công!', 'Đặt vé thành công!');
+      navigation.popToTop();
+    } catch (error: any) {
+      showAlert('Lỗi', error.message || 'Đặt vé thất bại, vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBook = () => {
+    if (!auth.currentUser) {
+      showAlert('Lỗi', 'Vui lòng đăng nhập');
       return;
     }
 
-    Alert.alert(
-      'Xác nhận đặt vé',
-      `${movie.title}\n${theater.name}\n${formatDateTime(showtime.dateTime)}\nSố vé: ${seatCount}\nTổng: ${formatPrice(totalPrice)}`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Đặt vé',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              const ticketId = await bookTicket({
-                userId: user.uid,
-                movieId: movie.id,
-                showtimeId: showtime.id,
-                theaterId: theater.id,
-                movieTitle: movie.title,
-                theaterName: theater.name,
-                showDateTime: showtime.dateTime,
-                seatCount,
-                totalPrice,
-              });
-
-              // Schedule push notification reminder
-              await scheduleShowtimeReminder(
-                movie.title,
-                theater.name,
-                showtime.dateTime,
-                ticketId
-              );
-
-              Alert.alert('Thành công!', 'Đặt vé thành công! Bạn sẽ nhận thông báo nhắc nhở 30 phút trước giờ chiếu.', [
-                { text: 'OK', onPress: () => navigation.popToTop() },
-              ]);
-            } catch (error) {
-              console.error('Booking failed:', error);
-              Alert.alert('Lỗi', 'Đặt vé thất bại, vui lòng thử lại');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    const msg = `${movie.title}\n${theater.name}\n${formatDateTime(showtime.dateTime)}\nSố vé: ${seatCount}\nTổng: ${formatPrice(totalPrice)}`;
+    showConfirm(msg, doBook);
   };
 
   return (

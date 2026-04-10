@@ -2,25 +2,19 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { auth } from '../../config/firebase-config';
 import { logoutUser } from '../../services/auth-service';
+import { showAlert, showConfirm } from '../../utils/platform-alert';
 
 export default function ProfileScreen() {
   const user = auth.currentUser;
 
   const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
-      { text: 'Hủy', style: 'cancel' },
-      {
-        text: 'Đăng xuất',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await logoutUser();
-          } catch (error) {
-            Alert.alert('Lỗi', 'Đăng xuất thất bại');
-          }
-        },
-      },
-    ]);
+    showConfirm('Bạn có chắc muốn đăng xuất?', async () => {
+      try {
+        await logoutUser();
+      } catch (error) {
+        showAlert('Lỗi', 'Đăng xuất thất bại');
+      }
+    });
   };
 
   return (

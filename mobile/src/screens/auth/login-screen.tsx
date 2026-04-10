@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../models/types';
-import { loginUser } from '../../services/auth-service';
+import { loginUser, loginWithGoogle } from '../../services/auth-service';
+import { showAlert } from '../../utils/platform-alert';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
@@ -22,10 +23,24 @@ export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      await loginWithGoogle();
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        showAlert('Lỗi', 'Đăng nhập Google thất bại');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu');
+      showAlert('Lỗi', 'Vui lòng nhập email và mật khẩu');
       return;
     }
     try {
@@ -38,7 +53,7 @@ export default function LoginScreen({ navigation }: Props) {
           : error.code === 'auth/too-many-requests'
           ? 'Quá nhiều lần thử, vui lòng thử lại sau'
           : 'Đăng nhập thất bại';
-      Alert.alert('Lỗi', msg);
+      showAlert('Lỗi', msg);
     } finally {
       setLoading(false);
     }
@@ -86,6 +101,24 @@ export default function LoginScreen({ navigation }: Props) {
           )}
         </TouchableOpacity>
 
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>hoặc</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity
+          style={styles.googleBtn}
+          onPress={handleGoogleLogin}
+          disabled={googleLoading}
+        >
+          {googleLoading ? (
+            <ActivityIndicator color="#333" />
+          ) : (
+            <Text style={styles.googleBtnText}>G  Đăng nhập với Google</Text>
+          )}
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerText}>
             Chưa có tài khoản? <Text style={styles.registerLink}>Đăng ký</Text>
@@ -120,6 +153,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   loginBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#333' },
+  dividerText: { color: '#666', paddingHorizontal: 12, fontSize: 14 },
+  googleBtn: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  googleBtnText: { color: '#333', fontSize: 16, fontWeight: '600' },
   registerText: { textAlign: 'center', color: '#aaa', marginTop: 8, fontSize: 15 },
   registerLink: { color: '#e94560', fontWeight: 'bold' },
 });

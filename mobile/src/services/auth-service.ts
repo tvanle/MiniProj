@@ -1,13 +1,17 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   updateProfile,
   onAuthStateChanged,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase-config';
+
+const googleProvider = new GoogleAuthProvider();
 
 export const registerUser = async (
   email: string,
@@ -32,6 +36,23 @@ export const loginUser = async (
 ): Promise<FirebaseUser> => {
   const credential = await signInWithEmailAndPassword(auth, email, password);
   return credential.user;
+};
+
+export const loginWithGoogle = async (): Promise<FirebaseUser> => {
+  const credential = await signInWithPopup(auth, googleProvider);
+  const user = credential.user;
+
+  // Save to Firestore if first time
+  const userDoc = await getDoc(doc(db, 'users', user.uid));
+  if (!userDoc.exists()) {
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName || 'Google User',
+      createdAt: new Date().toISOString(),
+    });
+  }
+  return user;
 };
 
 export const logoutUser = async (): Promise<void> => {

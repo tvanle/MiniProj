@@ -13,6 +13,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../models/types';
 import { registerUser } from '../../services/auth-service';
+import { showAlert } from '../../utils/platform-alert';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Register'>;
@@ -27,27 +28,27 @@ export default function RegisterScreen({ navigation }: Props) {
 
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+      showAlert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      showAlert('Lỗi', 'Mật khẩu xác nhận không khớp');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+      showAlert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
     try {
       setLoading(true);
       await registerUser(email.trim(), password, name.trim());
-      Alert.alert('Thành công', 'Đăng ký thành công!');
+      showAlert('Thành công', 'Đăng ký thành công!');
     } catch (error: any) {
       const msg =
         error.code === 'auth/email-already-in-use'
           ? 'Email đã được sử dụng'
           : 'Đăng ký thất bại';
-      Alert.alert('Lỗi', msg);
+      showAlert('Lỗi', msg);
     } finally {
       setLoading(false);
     }
